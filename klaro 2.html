@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klaro — analyse de produits</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Klaro">
+<meta name="theme-color" content="#232228">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2310201F'/%3E%3Ctext x='50' y='68' font-size='58' font-family='sans-serif' font-weight='700' fill='%23EDEAE0' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#232228;
+    --surface:#2C2B33;
+    --surface-2:#36353E;
+    --text:#F2F1F7;
+    --text-dim:#A8A5B5;
+    --line:rgba(242,241,247,0.12);
+    --accent:#7C6FF0;
+    --good:#33C2A4;
+    --mid:#F0B429;
+    --bad:#F2545B;
+    --info:#7C6FF0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:36px 22px 80px;}
+  header{margin-bottom:34px;}
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:2.1rem;
+    font-weight:700;
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+    color:#FFFFFF;
+  }
+  h1 span{color:var(--accent);}
+  .tagline{color:var(--text-dim);font-size:1rem;margin:0;max-width:46ch;line-height:1.6;}
+
+  .scan-zone{
+    border:1px solid var(--line);
+    background:var(--surface);
+    border-radius:10px;
+    padding:28px 24px;
+    margin-bottom:28px;
+  }
+  #reader{
+    width:100%;
+    border-radius:4px;
+    overflow:hidden;
+    display:none;
+    margin-bottom:14px;
+    background:#000;
+  }
+  #reader.active{display:block;}
+
+  button{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    border:none;
+    border-radius:8px;
+    padding:16px 20px;
+    cursor:pointer;
+    transition:opacity .15s ease;
+  }
+  button:active{opacity:0.8;}
+  .btn-primary{background:var(--accent);color:#fff;width:100%;}
+  .btn-secondary{background:transparent;color:var(--text);border:1px solid var(--line);width:100%;}
+  .btn-row{display:flex;flex-direction:column;gap:14px;}
+
+  .divider{
+    display:flex;align-items:center;gap:14px;
+    color:var(--text-dim);font-size:0.82rem;
+    margin:26px 0;
+  }
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  .search-row{display:flex;gap:10px;margin-bottom:10px;}
+  input[type="text"]{
+    flex:1;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:16px 16px;
+    border-radius:8px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:0.95rem;
+  }
+  input[type="text"]:focus{outline:1px solid var(--accent);}
+  .search-row button{width:auto;padding:16px 18px;background:var(--surface-2);color:var(--text);border:1px solid var(--line);}
+
+  .status{color:var(--text-dim);font-size:0.88rem;margin:16px 2px;min-height:1.2em;line-height:1.6;}
+
+  .picker-list{border-top:1px solid var(--line);margin-top:8px;}
+  .picker-item{
+    display:flex;gap:12px;align-items:center;
+    padding:12px 4px;border-bottom:1px solid var(--line);
+    cursor:pointer;
+  }
+  .picker-item img{width:44px;height:44px;object-fit:contain;background:#fff;border-radius:3px;flex-shrink:0;}
+  .picker-item .pi-name{font-weight:500;font-size:0.92rem;}
+  .picker-item .pi-meta{color:var(--text-dim);font-size:0.78rem;}
+
+  .report{
+    border:1px solid var(--line);
+    background:var(--surface);
+    border-radius:10px;
+    margin-top:12px;
+    overflow:hidden;
+  }
+  .report-head{
+    display:flex;gap:16px;align-items:center;
+    padding:24px;border-bottom:1px solid var(--line);
+  }
+  .report-head img{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:4px;flex-shrink:0;}
+  .rh-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.2rem;line-height:1.3;}
+  .rh-brand{color:var(--text-dim);font-size:0.86rem;margin-top:4px;}
+  .badge{
+    display:inline-block;font-size:0.72rem;padding:4px 10px;border-radius:20px;
+    border:1px solid var(--line);color:var(--text-dim);margin-top:10px;
+  }
+
+  .banner{
+    padding:18px 24px;font-size:0.9rem;border-bottom:1px solid var(--line);
+    background:rgba(240,180,41,0.08);color:var(--text);line-height:1.6;
+  }
+  .banner b{color:var(--mid);}
+
+  .section-title{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1rem;
+    padding:22px 24px 10px;color:var(--text);
+  }
+  .section-note{padding:0 24px 14px;color:var(--text-dim);font-size:0.8rem;line-height:1.6;}
+
+  table.nutri{width:100%;border-collapse:collapse;}
+  table.nutri td{padding:14px 24px;border-top:1px solid var(--line);font-size:0.9rem;vertical-align:middle;}
+  table.nutri td.label{color:var(--text);}
+  .nutrient-msg{font-size:0.76rem;color:var(--text-dim);margin-top:4px;font-weight:400;line-height:1.5;}
+  .nutrient-msg.low{color:var(--good);}
+  .nutrient-msg.high{color:var(--bad);}
+  table.nutri td.value{font-family:'IBM Plex Mono',monospace;text-align:right;white-space:nowrap;width:1%;}
+  .gauge{
+    display:inline-block;width:44px;height:8px;border-radius:4px;margin-left:10px;vertical-align:middle;
+  }
+  .gauge.low{background:var(--good);}
+  .gauge.mid{background:var(--mid);}
+  .gauge.high{background:var(--bad);}
+  .rating-tag{font-size:0.72rem;color:var(--text-dim);margin-left:8px;}
+
+  .ingredients{padding:6px 24px 22px;font-size:0.87rem;color:var(--text-dim);line-height:1.7;}
+  .ingredients .flagged{color:var(--bad);font-weight:600;}
+
+  .legend{
+    padding:18px 24px 24px;font-size:0.78rem;color:var(--text-dim);border-top:1px solid var(--line);
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;margin-right:16px;}
+  .legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+  footer{margin-top:40px;color:var(--text-dim);font-size:0.78rem;line-height:1.7;}
+  footer a{color:var(--info);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Klaro<span>.</span></h1>
+    <p class="tagline">Scanne ou cherche un produit — alimentaire, cosmétique, ou autre — pour voir sa composition réelle : sucre, glucides, lipides, mauvaises graisses, ingrédients.</p>
+  </header>
+
+  <div class="scan-zone">
+    <div id="reader"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="scanBtn">Scanner un code-barres</button>
+      <button class="btn-secondary" id="stopBtn" style="display:none;">Arrêter la caméra</button>
+    </div>
+    <div class="divider">ou</div>
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="Nom du produit…">
+      <button id="searchBtn">Chercher</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="picker-list" id="pickerList"></div>
+  </div>
+
+  <div id="reportContainer"></div>
+
+  <footer>
+    Données issues des bases collaboratives ouvertes Open Food Facts, Open Beauty Facts et Open Products Facts (licence ODbL). La couverture n'est pas exhaustive : un produit récent ou peu scanné peut être absent. Les seuils utilisés sont le repère nutritionnel officiel UE-UK, calculé pour 100 g. Ceci n'est pas un avis médical.
+    <div style="margin-top:14px;opacity:0.55;font-size:0.7rem;">Klaro — conçu et développé par ADY. © 2026 ADY. Tous droits réservés.</div>
+  </footer>
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const pickerList = document.getElementById('pickerList');
+const reportContainer = document.getElementById('reportContainer');
+
+// ---------- Thresholds (official EU/UK front-of-pack traffic light, per 100g, solids) ----------
+const THRESHOLDS = {
+  sugars:        { low: 5,   high: 22.5 },
+  fat:           { low: 3,   high: 17.5 },
+  saturatedFat:  { low: 1.5, high: 5 },
+  salt:          { low: 0.3, high: 1.5 }
+};
+function rate(key, value){
+  if(value === undefined || value === null || isNaN(value)) return null;
+  const t = THRESHOLDS[key];
+  if(value <= t.low) return 'low';
+  if(value >= t.high) return 'high';
+  return 'mid';
+}
+function ratingLabel(r){
+  return r === 'low' ? 'faible' : r === 'high' ? 'élevé' : 'modéré';
+}
+
+// ---------- Cosmetic ingredient watchlist (neutral flag, not a toxicity verdict) ----------
+const COSMETIC_WATCH = ['paraben','phenoxyethanol','sodium laureth sulfate','sodium lauryl sulfate','triclosan','formaldehyde','bht','bha'];
+
+// ---------- API lookups ----------
+async function fetchByBarcode(code){
+  const sources = [
+    { key:'off', base:'https://world.openfoodfacts.org' },
+    { key:'obf', base:'https://world.openbeautyfacts.org' },
+    { key:'opf', base:'https://world.openproductsfacts.org' }
+  ];
+  for(const s of sources){
+    try{
+      const res = await fetch(`${s.base}/api/v2/product/${code}.json`);
+      const data = await res.json();
+      if(data.status === 1 && data.product){
+        return { source:s.key, product:data.product };
+      }
+    }catch(e){ /* try next source */ }
+  }
+  return null;
+}
+
+async function searchByName(query){
+  const sources = [
+    { key:'off', label:'Alimentaire', url:`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5` },
+    { key:'obf', label:'Cosmétique', url:`https://world.openbeautyfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5` },
+    { key:'opf', label:'Autre', url:`https://world.openproductsfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5` }
+  ];
+
+  const attempts = await Promise.all(sources.map(async s => {
+    try{
+      const res = await fetch(s.url);
+      if(!res.ok){
+        return { key:s.key, label:s.label, ok:false, diag:`HTTP ${res.status}` };
+      }
+      const data = await res.json();
+      return { key:s.key, label:s.label, ok:true, products: data.products || [] };
+    }catch(e){
+      return { key:s.key, label:s.label, ok:false, diag: e.message || String(e) };
+    }
+  }));
+
+  let merged = [];
+  attempts.forEach(a => {
+    if(a.ok) a.products.forEach(p => merged.push({ source:a.key, product:p }));
+  });
+
+  const diagText = attempts.map(a => a.ok ? `${a.label} : ${a.products.length} résultat(s)` : `${a.label} : échec — ${a.diag}`).join(' · ');
+  merged.diagText = diagText;
+  return merged;
+}
+
+// ---------- Rendering ----------
+function sourceLabel(source){
+  return source === 'off' ? 'Alimentaire' : source === 'obf' ? 'Cosmétique' : 'Autre produit';
+}
+
+function isBabyFood(product){
+  const cats = (product.categories_tags || []).join(' ');
+  const name = (product.product_name || '').toLowerCase();
+  return cats.includes('baby') || cats.includes('infant') || name.includes('bébé') || name.includes('bebe') || name.includes('nourrisson');
+}
+
+function renderPicker(results){
+  pickerList.innerHTML = '';
+  if(results.length === 0){
+    statusEl.innerHTML = `Aucun produit trouvé pour cette recherche.<br><span style="font-size:0.74rem;opacity:0.75;">Détail technique : ${results.diagText || 'n/a'}</span>`;
+    return;
+  }
+  statusEl.textContent = `${results.length} résultat(s) — sélectionne un produit :`;
+  results.forEach(r => {
+    const p = r.product;
+    const div = document.createElement('div');
+    div.className = 'picker-item';
+    div.innerHTML = `
+      <img src="${p.image_small_url || p.image_url || ''}" onerror="this.style.visibility='hidden'">
+      <div>
+        <div class="pi-name">${p.product_name || 'Produit sans nom'}</div>
+        <div class="pi-meta">${p.brands || ''} · ${sourceLabel(r.source)}</div>
+      </div>`;
+    div.onclick = () => {
+      pickerList.innerHTML = '';
+      statusEl.textContent = '';
+      renderReport(r.source, p);
+    };
+    pickerList.appendChild(div);
+  });
+}
+
+const NUTRIENT_MESSAGES = {
+  sugars:       { low: "Faible en sucre — bon point.", mid: "Sucre dans la moyenne.", high: "Beaucoup de sucre — au-delà du repère recommandé pour une consommation régulière." },
+  fat:          { low: "Peu de matières grasses — bon point.", mid: "Matières grasses dans la moyenne.", high: "Riche en matières grasses." },
+  saturatedFat: { low: "Peu de mauvaises graisses — bon point.", mid: "Graisses saturées dans la moyenne.", high: "Beaucoup de graisses saturées (les « mauvaises graisses ») — à limiter." },
+  salt:         { low: "Peu salé — bon point.", mid: "Sel dans la moyenne.", high: "Très salé — au-delà du repère recommandé." }
+};
+
+function nutrientRow(label, value, unit, ratingKey){
+  if(value === undefined || value === null) return '';
+  const r = ratingKey ? rate(ratingKey, value) : null;
+  const gauge = r ? `<span class="gauge ${r}"></span><span class="rating-tag">${ratingLabel(r)}</span>` : '';
+  const msg = (r && NUTRIENT_MESSAGES[ratingKey]) ? `<div class="nutrient-msg ${r}">${NUTRIENT_MESSAGES[ratingKey][r]}</div>` : '';
+  return `<tr><td class="label">${label}${msg}</td><td class="value">${value} ${unit} ${gauge}</td></tr>`;
+}
+
+function renderReport(source, product){
+  const n = product.nutriments || {};
+  const baby = source === 'off' && isBabyFood(product);
+  let html = `<div class="report">`;
+
+  html += `<div class="report-head">
+    <img src="${product.image_url || ''}" onerror="this.style.visibility='hidden'">
+    <div>
+      <div class="rh-name">${product.product_name || 'Produit sans nom'}</div>
+      <div class="rh-brand">${product.brands || ''}</div>
+      <span class="badge">${sourceLabel(source)}</span>
+    </div>
+  </div>`;
+
+  if(baby){
+    html += `<div class="banner"><b>Aliment pour bébé détecté.</b> Les seuils ci-dessous sont calibrés pour un adulte. L'OMS recommande d'éviter tout sucre ajouté avant 2 ans, quelle que soit la valeur mesurée — regarde surtout la liste d'ingrédients pour repérer un sucre ajouté (sirop, jus concentré, sucre, dextrose…).</div>`;
+  }
+
+  if(source === 'off' || source === 'opf'){
+    html += `<div class="section-title">Valeurs nutritionnelles (pour 100 g)</div>
+    <table class="nutri">
+      ${nutrientRow('Énergie', n['energy-kcal_100g'], 'kcal', null)}
+      ${nutrientRow('Glucides', n['carbohydrates_100g'], 'g', null)}
+      ${nutrientRow('… dont sucres', n['sugars_100g'], 'g', 'sugars')}
+      ${nutrientRow('Lipides (total)', n['fat_100g'], 'g', 'fat')}
+      ${nutrientRow('… dont graisses saturées', n['saturated-fat_100g'], 'g', 'saturatedFat')}
+      ${nutrientRow('Protéines', n['proteins_100g'], 'g', null)}
+      ${nutrientRow('Sel', n['salt_100g'], 'g', 'salt')}
+    </table>
+    <div class="legend">
+      <span><i style="background:var(--good)"></i>faible</span>
+      <span><i style="background:var(--mid)"></i>modéré</span>
+      <span><i style="background:var(--bad)"></i>élevé</span>
+    </div>`;
+  }
+
+  // Ingredients (present for food, cosmetics, and sometimes other products)
+  const ingredientsText = product.ingredients_text_fr || product.ingredients_text || '';
+  if(ingredientsText){
+    let displayText = ingredientsText;
+    if(source === 'obf'){
+      COSMETIC_WATCH.forEach(term => {
+        const re = new RegExp(`(${term})`, 'gi');
+        displayText = displayText.replace(re, '<span class="flagged">$1</span>');
+      });
+    }
+    html += `<div class="section-title">Ingrédients</div>
+      <div class="ingredients">${displayText}</div>`;
+    if(source === 'obf'){
+      html += `<div class="section-note" style="padding-top:0;">En rouge : ingrédients parfois discutés (parabènes, sulfates, conservateurs…) — présence signalée à titre informatif, pas un jugement de dangerosité.</div>`;
+    }
+  } else {
+    html += `<div class="ingredients">Liste d'ingrédients non renseignée dans la base pour ce produit.</div>`;
+  }
+
+  html += `</div>`;
+  reportContainer.innerHTML = html;
+  reportContainer.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ---------- Search wiring ----------
+document.getElementById('searchBtn').onclick = doSearch;
+document.getElementById('searchInput').addEventListener('keydown', e => { if(e.key === 'Enter') doSearch(); });
+
+async function doSearch(){
+  const q = document.getElementById('searchInput').value.trim();
+  if(!q) return;
+  reportContainer.innerHTML = '';
+  statusEl.textContent = 'Recherche en cours…';
+  const results = await searchByName(q);
+  renderPicker(results);
+}
+
+// ---------- Barcode scanning ----------
+let html5QrCode = null;
+const readerEl = document.getElementById('reader');
+const scanBtn = document.getElementById('scanBtn');
+const stopBtn = document.getElementById('stopBtn');
+
+scanBtn.onclick = async () => {
+  reportContainer.innerHTML = '';
+  pickerList.innerHTML = '';
+  statusEl.textContent = 'Ouverture de la caméra…';
+  readerEl.classList.add('active');
+  scanBtn.style.display = 'none';
+  stopBtn.style.display = 'block';
+
+  html5QrCode = new Html5Qrcode("reader", { formatsToSupport: [
+    Html5QrcodeSupportedFormats.EAN_13,
+    Html5QrcodeSupportedFormats.EAN_8,
+    Html5QrcodeSupportedFormats.UPC_A,
+    Html5QrcodeSupportedFormats.UPC_E,
+    Html5QrcodeSupportedFormats.CODE_128
+  ]});
+
+  try{
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 120 } },
+      async (decodedText) => {
+        statusEl.textContent = `Code détecté : ${decodedText} — recherche en cours…`;
+        await stopScanner();
+        const found = await fetchByBarcode(decodedText);
+        if(found){
+          statusEl.textContent = '';
+          renderReport(found.source, found.product);
+        } else {
+          statusEl.textContent = `Aucun produit trouvé pour le code ${decodedText}. Essaie la recherche par nom.`;
+        }
+      },
+      () => { /* frame with no barcode, ignore */ }
+    );
+    statusEl.textContent = 'Vise le code-barres avec la caméra.';
+  }catch(err){
+    statusEl.textContent = "Impossible d'accéder à la caméra. Vérifie les autorisations, ou utilise la recherche par nom.";
+    readerEl.classList.remove('active');
+    scanBtn.style.display = 'block';
+    stopBtn.style.display = 'none';
+  }
+};
+
+stopBtn.onclick = stopScanner;
+
+async function stopScanner(){
+  if(html5QrCode){
+    try{ await html5QrCode.stop(); html5QrCode.clear(); }catch(e){}
+    html5QrCode = null;
+  }
+  readerEl.classList.remove('active');
+  scanBtn.style.display = 'block';
+  stopBtn.style.display = 'none';
+}
+</script>
+</body>
+</html>
